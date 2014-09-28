@@ -29,14 +29,13 @@ class CoordinatorTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val coordinator = system.actorOf(Props(classOf[CoordinatorImpl]), "coordinator")
 
   import scala.concurrent.duration._
-  val timeout = 5 seconds
-  implicit val askTimeout = Timeout(timeout)
+  import Helper._
 
   "coordinator" should "complete transaction" in {
     val request = ReqSeq("100800", Seq(Task(Success), Task(Success), Task(Success)))
     val result = coordinator ? request
     Await.result(result, timeout) should be (Success)
-    val tasks = Future.sequence(request.rs.map(_.isComplete.future))
+    val tasks = Future.sequence(request.data.map(_.isComplete.future))
     Await.result(tasks, timeout) should be (Seq(Success, Success, Success))
   }
 
@@ -44,17 +43,18 @@ class CoordinatorTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val request = ReqSeq("100900", Seq(Task(Success), Task(Success), Task(Failure)))
     val result = coordinator ? request
     Await.result(result, timeout) should be (Failure)
-    val tasks = Future.sequence(request.rs.map(_.isComplete.future))
+    val tasks = Future.sequence(request.data.map(_.isComplete.future))
     Await.result(tasks, timeout) should be (Seq(Failure, Failure, Failure))
   }
 
   "coordinator" should "complete chunked transaction" in {
-    val chunk1 = new ReqSeq("1001000", Seq(Task(Success), Task(Success), Task(Success))){override def count = 5}
-    val chunk2 = new ReqSeq("1001000", Seq(Task(Success), Task(Success))){override def count = 5}
+    implicit val expectations = 5.expected[Task]
+    val chunk1 = ReqSeq("1001000", Seq(Task(Success), Task(Success), Task(Success)))
+    val chunk2 = ReqSeq("1001000", Seq(Task(Success), Task(Success)))
     coordinator ! chunk1
     val result = coordinator ? chunk2
     Await.result(result, timeout) should be (Success)
-    val tasks = Future.sequence(chunk1.rs.map(_.isComplete.future))
+    val tasks = Future.sequence(chunk1.data.map(_.isComplete.future))
     Await.result(tasks, timeout) should be (Seq(Success, Success, Success))
   }
 
