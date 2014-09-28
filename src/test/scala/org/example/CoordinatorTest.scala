@@ -5,8 +5,8 @@ import scala.concurrent._
 import akka.actor.{ActorSystem, Props}
 import scala.collection.mutable.ListBuffer
 import akka.pattern._
-import org.example
 import akka.util.Timeout
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Created by user on 9/28/14.
@@ -39,6 +39,8 @@ class CoordinatorTest extends FlatSpec with Matchers {
     val request = ReqSeq("100500", Seq(Task(Success), Task(Success), Task(Success)))
     val result = coordinator ? request
     Await.result(result, timeout) should be (Success)
+    val tasks = Future.sequence(request.rs.map(_.isComplete.future))
+    Await.result(tasks, timeout) should be (Seq(Success, Success, Success))
 
   }
 
@@ -46,5 +48,7 @@ class CoordinatorTest extends FlatSpec with Matchers {
     val request = ReqSeq("100500", Seq(Task(Success), Task(Success), Task(Failure)))
     val result = coordinator ? request
     Await.result(result, timeout) should be (Failure)
+    val tasks = Future.sequence(request.rs.map(_.isComplete.future))
+    Await.result(tasks, timeout) should be (Seq(Success, Success, Failure))
   }
 }

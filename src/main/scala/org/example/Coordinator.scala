@@ -9,7 +9,7 @@ case class Req[T](req: T)
 abstract class Coordinator[T, TA: ClassTag] extends Actor {
   def transactor(tid: String, rs: ReqSeq[T]) = context.actorOf(Props(classTag[TA].runtimeClass, rs), tid)
   def receive = {
-    case ReqSeq(tid, rs) =>
+    case ReqSeq(tid, rs) => //TODO ask forward
   }
 }
 
