@@ -21,7 +21,8 @@
 /test/files/lib/*.jar
 /test/files/speclib/instrumented.jar
 /tools/*.jar
-/target
+
+target
 
 # Developer specific Ant properties
 /build.properties
