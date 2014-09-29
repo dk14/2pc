@@ -28,7 +28,6 @@ class CoordinatorTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val coordinator = system.actorOf(Props(classOf[CoordinatorImpl]), "coordinator")
 
-  import scala.concurrent.duration._
   import Helper._
   import Helper.implic.defaultAskTimeout
 
@@ -48,15 +47,15 @@ class CoordinatorTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     Await.result(tasks, defaultTimeout) should be (Seq(Failure, Failure, Failure))
   }
 
-  "coordinator" should "complete chunked transaction" in {
+  "coordinator" should "rollback chunked transaction" in {
     implicit val expectations = 5.expected[Task]
-    val chunk1 = ReqSeq("1001000", Seq(Task(Success), Task(Success), Task(Success)))
+    val chunk1 = ReqSeq("1001000", Seq(Task(Failure), Task(Success), Task(Success)))
     val chunk2 = ReqSeq("1001000", Seq(Task(Success), Task(Success)))
     coordinator ! chunk1
     val result = coordinator ? chunk2
-    Await.result(result, defaultTimeout) should be (Success)
+    Await.result(result, defaultTimeout) should be (Failure)
     val tasks = Future.sequence(chunk1.data.map(_.isComplete.future))
-    Await.result(tasks, defaultTimeout) should be (Seq(Success, Success, Success))
+    Await.result(tasks, defaultTimeout) should be (Seq(Failure, Failure, Failure))
   }
 
   override def afterAll = system.shutdown()
