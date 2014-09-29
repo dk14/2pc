@@ -7,13 +7,13 @@ This simple library allows you to create your own distributed transaction coordi
     
     class CoordinatorImpl extends Coordinator[Message, TransactorImpl]
 
-    class TransactorImpl extends Transactor[Message, ProcessorImpl] {
+    class TransactorImpl extends Transactor[Message, ProcessorImpl] { //2nd phase
        override def complete //transactionId is available here as tid
        override def rollback //transactionId is available here as tid
        //super.complete/rollback will send notification to coordinator
     }
 
-    class ProcessorImpl extends Processor[Task] {
+    class ProcessorImpl extends Processor[Task] { //1st phase
         def process(r: Req[Message]) = ... //should return Commit or Rollback
         def complete(m: Message) = ...
         def rollback(m: Message) = ...
@@ -30,7 +30,6 @@ Just implement complete/rollback to adopt it to your underlying system like JDBC
 
 To send set of messages, participating in one distributed transaction, use:
   
-      implicit val askTimeout: Timeout = Timeout(Helper.defaultTimeout)
       val coordinator = system.actorOf(Props(classOf[CoordinatorImpl]), "coordinator")
       val request = ReqSeq(tid, Seq(msg1, ..., msgN))
       coordinator ! request
@@ -62,6 +61,7 @@ If you want to reduce data from processors to some actor - just point them to on
 Same protocols may send data chunk by chunk and you may need process every chunk immediately. You can use chunked transaction to adopt such protocols:
 
     import Helper._
+    import Helper.implic.defaultAskTimeout
     implicit val expectations = 5.expected[Task]
     val chunk1 = ReqSeq("1001000", Seq(msg1, msg2, msg3))
     val chunk2 = ReqSeq("1001000", Seq(msg4, msg5))
