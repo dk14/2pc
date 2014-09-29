@@ -14,9 +14,9 @@ This simple library allows you to create your own distributed transaction coordi
     }
 
     class ProcessorImpl extends Processor[Task] { //1st phase
-        def process(r: Req[Message]) = ... //should return Commit or Rollback vote
-        def complete(r: Req[Message]) = ...
-        def rollback(r: Req[Message]) = ...
+        def process(r: Req[Message]) = Future{...} //should return Commit or Rollback vote
+        def complete(r: Req[Message]) = Future{...}
+        def rollback(r: Req[Message]) = Future{...}
     }
     
 where 
@@ -49,7 +49,7 @@ If you want to reduce data from processors to some actor - just point them to on
      case class Message(a: ActorRef, e: Option[Throwable], ...)
      
      //in processor
-     def process(r: Req[Message]) = {
+     def process(r: Req[Message]) = Future {
          val res = ... 
          r.req.a ! res    
      }

@@ -34,9 +34,10 @@ abstract class Transactor[T, P <: Processor[T]: ClassTag] extends TransactorLike
 }
 
 trait Processor[T] extends ProcessorLike[T] {
+  import context.dispatcher
   final def receive = {
-    case r: Req[T] => sender ! process(r)
-    case o: Commit[T] => complete(o.req); sender ! Ack(o)
-    case o: Rollback[T] => rollback(o.req); sender ! Ack(o)
+    case r: Req[T] =>  process(r) pipeTo sender
+    case o: Commit[T] => complete(o.req) map (_ => Ack(o)) pipeTo sender; context stop self
+    case o: Rollback[T] => rollback(o.req) map (_ => Ack(o)) pipeTo sender; context stop self
   }
 }

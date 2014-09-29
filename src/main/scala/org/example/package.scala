@@ -6,6 +6,7 @@ import scala.reflect.ClassTag
 import akka.actor._
 import scala.collection.mutable.ListBuffer
 import akka.pattern._
+import scala.concurrent.Future
 
 /**
  * Created by user on 9/29/14.
@@ -69,9 +70,9 @@ package object example {
   }
 
   trait ProcessorLike[T] extends Actor {
-    def process(r: Req[T]): Vote[T]
-    def complete(t: Req[T])
-    def rollback(t: Req[T])
+    def process(r: Req[T]): Future[Vote[T]]
+    def complete(t: Req[T]): Future[Unit]
+    def rollback(t: Req[T]): Future[Unit]
   }
 
 }

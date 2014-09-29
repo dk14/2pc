@@ -18,9 +18,9 @@ class CoordinatorImpl extends Coordinator[Task, TransactorImpl]
 class TransactorImpl extends Transactor[Task, ProcessorImpl]
 
 class ProcessorImpl extends Processor[Task] {
-  def process(r: Req[Task]) = if (r.body.s == Success) Commit(r) else Rollback(r)
-  def complete(t: Req[Task]) = t.body.isComplete.success(Success)
-  def rollback(t: Req[Task]) = t.body.isComplete.success(Failure)
+  def process(r: Req[Task]) = Future{if (r.body.s == Success) Commit(r) else Rollback(r)}
+  def complete(t: Req[Task]) = Future{t.body.isComplete.success(Success)}
+  def rollback(t: Req[Task]) = Future{t.body.isComplete.success(Failure)}
 }
 
 class CoordinatorTest extends FlatSpec with Matchers with BeforeAndAfterAll {
