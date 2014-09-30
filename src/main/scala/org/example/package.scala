@@ -34,9 +34,10 @@ package object example {
     def transactionTimeout = defaultTimeout
   }
 
-  case class ReqSeq[T](tid: String, data: Seq[T])(implicit val merging: GetMerge[T] = default[T] _,
-                                                  val askTimeout: Timeout = Timeout(defaultTimeout))
-  case class Req[T](tid: String, body: T)
+
+  case class ReqSeq[T](tid: String, data: Seq[T])
+                      (implicit val merging: GetMerge[T] = default[T] _, val askTimeout: Timeout = Timeout(defaultTimeout))
+  case class Req[T](tid: String, body: T, seqNumber: Int)
   case class Process[T](rs: ReqSeq[T])
 
   trait Result
@@ -48,7 +49,7 @@ package object example {
   case class Rollback[T](req: Req[T]) extends Vote[T] { def isCommit = false }
   case class Ack[T](vote: Vote[T])
 
-  abstract class TransactorLike[T, P <: Processor[T]: ClassTag] extends Actor {
+  abstract class TransactorLike[T] extends Actor {
     import context.dispatcher
     private[example] var transact: ReqSeq[T] = _
     private[example] var parent: ActorRef = _ //we need it to correlate with last request, it's not context.parent
@@ -60,7 +61,8 @@ package object example {
 
     final def tid = self.path.name
 
-    private[example] val stat = scala.collection.mutable.Map[ActorRef, Vote[T]]()
+    val orderBySeqNumber = Ordering.by[(ActorRef, Vote[T]), Int](_._2.req.seqNumber)
+    private[example] val stat = scala.collection.mutable.SortedSet[(ActorRef, Vote[T])]()(orderBySeqNumber)
     private[example] def votes = stat.map(_._2).toSeq // voting
 
     def scheduleTimeouts(isFirstChunk: Boolean, merging: Merging[T]) = {

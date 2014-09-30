@@ -42,17 +42,16 @@ If you want to reduce data from processors to some actor - just point them to on
 
      class Receiver() extends Actor { ... }
      
-     //in your superviser
+     //in your supervisor
      context.child(tid) getOrElse context.actorOf(Props[Receiver], tid)
      
      //in your message
      case class Message(a: ActorRef, e: Option[Throwable], ...)
      
-     //in processor
-     def process(r: Req[Message]) = Future {
-         val res = ... 
-         r.req.a ! res    
-     }
+     //in processor (data with same tid will arrive sequentially)
+     def process(r: Req[Message]) = r.req.a ? res
+     
+     
      
      def complete(m: Req[Message]) = m.body.a ! Done
      def rollback(m: Req[Message]) = m.body.a ! m.e //or m.a ! PoisonPill
