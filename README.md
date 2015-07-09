@@ -1,4 +1,4 @@
-xa
+2pc
 ==
 
 This simple library allows you to create your own distributed transaction coordinator :
