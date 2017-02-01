@@ -24,7 +24,7 @@ where
 - Message - is a message participating in transaction
 - Coordinator - is a supervisor
 - Transactor - implements 2PC protocol
-- Processor - is an actor which actually do the job
+- Processor - is an actor which actually does the job
 
 Just implement complete/rollback to adopt this to your underlying system like JDBC, JMS or some other messaging protocol. 
 
